@@ -12,7 +12,7 @@ Serve the `designer/` folder with any static web server:
 python -m http.server 5173 --directory designer
 ```
 
-Then open http://localhost:5173. Opening `designer/index.html` directly from disk also works.
+Then open http://localhost:5173. Or use the live version at https://wisejohn.github.io/wall-spinner-designer/. Opening `designer/index.html` directly from disk also works.
 
 ## What it does
 
