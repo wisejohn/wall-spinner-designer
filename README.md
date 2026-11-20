@@ -23,6 +23,7 @@ Then open http://localhost:5173. Or use the live version at https://wisejohn.git
   - **Select** (`V`): drag nodes, Bézier handles and width diamonds. Double-click a curve to add a node. Double-click a node to cycle it through smooth, corner and sharp.
   - **Mirror** (`M`): makes a part symmetric about the arm's axis.
   - **Presets**: hooked blade, swirl, two-segment arm, tapered spoke, petal loop, sweep blade and mirrored leaf.
+- **Trace image**: load, drop or paste an image (such as a photo of a spinner you like) to show under or over the arms while you draw. Line it up with three clicks: **Centre** (click the hub), **Outer edge** (click an arm tip so it scales to the disc diameter) and **Arm to 12** (rotates the image so an arm points up). You can also set opacity, width, rotation and offset by hand. The image is remembered in the browser and can be saved inside the design file.
 - **Disc settings**: number of arms, diameter, hub, axle hole, optional outer rim, trim to diameter, material thickness and a mounting bolt circle.
 - **Dual-disc view**: shows the flipped back disc behind the front one at any offset angle. It can appear in the editor, in the side preview, or in a large preview (`Tab`).
 - **Animation** (`Space` to play or pause):
@@ -61,6 +62,7 @@ designer/
   js/earcut.js     polygon triangulation for STL
   js/state.js      design model, presets, undo/redo, autosave
   js/render.js     disc painting + cut-outline tracing
+  js/reference.js  trace image: load, align, draw
   js/editor.js     editor canvas and drawing tools
   js/preview.js    counter-rotation animation
   js/export.js     SVG / DXF / STL / SCAD / PNG / print template

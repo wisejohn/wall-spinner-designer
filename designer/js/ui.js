@@ -34,11 +34,16 @@
     $$('[data-anim]').forEach((el) => writeInput(el, S.anim[el.dataset.anim]));
     $$('[data-view]').forEach((el) => writeInput(el, S.view[el.dataset.view]));
     $$('[data-toolopt]').forEach((el) => writeInput(el, S.tools[el.dataset.toolopt]));
+    const outText = (o, v) => (o.textContent = o.hasAttribute('data-pct') ? Math.round(v * 100) + '%' : fmt(v) + (o.dataset.unit || ''));
     $$('output[data-out]').forEach((o) => {
       const [scope, ...rest] = o.dataset.out.split('.');
-      const v = getPath({ anim: S.anim, tools: S.tools }[scope], rest.join('.'));
-      o.textContent = fmt(v) + (o.dataset.unit || '');
+      outText(o, getPath({ anim: S.anim, tools: S.tools, view: S.view }[scope], rest.join('.')));
     });
+    $('#ref-card').classList.toggle('has-ref', !!S.ref);
+    if (S.ref) {
+      $$('[data-ref]').forEach((el) => writeInput(el, S.ref[el.dataset.ref]));
+      $$('output[data-refout]').forEach((o) => outText(o, S.ref[o.dataset.refout]));
+    }
     $('#design-name').value === S.design.name || document.activeElement === $('#design-name') || ($('#design-name').value = S.design.name);
     $('#dia-inch').textContent = (S.design.disc.diameter / 25.4).toFixed(2) + ' in';
     $$('#mode-seg button').forEach((b) => b.classList.toggle('active', b.dataset.mode === S.anim.mode));
@@ -81,6 +86,18 @@
         WS.emit('view');
         refreshBindings();
       });
+    });
+    $$('[data-ref]').forEach((el) => {
+      const apply = () => {
+        if (!S.ref) return;
+        const v = readInput(el);
+        if (typeof v === 'number' && !isFinite(v)) return;
+        S.ref[el.dataset.ref] = el.dataset.ref === 'size' ? Math.max(1, v) : v;
+        Reference.changed(false);
+        refreshBindings();
+      };
+      el.addEventListener('input', () => { if (el.type !== 'number') apply(); });
+      el.addEventListener('change', () => { apply(); Reference.changed(true); });
     });
     $$('[data-toolopt]').forEach((el) => {
       el.addEventListener('input', () => {
@@ -341,6 +358,12 @@
         $('[data-action="big-preview"]').classList.toggle('active', !bp.hidden);
         break;
       }
+      case 'ref-load': $('#image-input').click(); break;
+      case 'ref-clear': Reference.clear(); break;
+      case 'ref-fit': Reference.fit(); break;
+      case 'ref-pick-centre': Editor.setTool('ref-centre'); break;
+      case 'ref-pick-rim': Editor.setTool('ref-rim'); break;
+      case 'ref-pick-arm': Editor.setTool('ref-arm'); break;
       case 'preset-replace':
       case 'preset-add': {
         const p = WS.presets[$('#preset-select').value];
@@ -362,6 +385,9 @@
       brush: `Brush: drag to paint a stroke arm (${S.tools.brushWidth} mm wide). Pen pressure is used if available.`,
       lasso: 'Outline: drag to draw a closed filled shape',
       pan: 'Pan: drag to move the view · scroll to zoom',
+      'ref-centre': 'Click the centre of the hub in the image — it will move to the disc centre (Esc cancels)',
+      'ref-rim': 'Click the outermost tip of an arm in the image — it will scale to the disc diameter (dashed circle)',
+      'ref-arm': 'Click along one arm in the image — it will rotate so that arm points to 12 o\'clock',
     };
     $('#tool-hint').textContent = hints[S.tool] || '';
   }
@@ -397,6 +423,7 @@
       case 'Tab': e.preventDefault(); action('big-preview'); break;
       case 'Enter': if (Editor.hasPenDraft()) Editor.finishPen(false); break;
       case 'Escape':
+        if (S.tool.startsWith('ref-')) { Editor.setTool('select'); break; }
         if (!Editor.cancelDraft()) { if (S.sel.node >= 0) WS.select(S.sel.shapeId, -1); else WS.select(null, -1); }
         break;
       case 'Delete': case 'Backspace': e.preventDefault(); Editor.deleteSelection(); break;
@@ -461,12 +488,33 @@
       if (!f) return;
       Exporter.importFile(f).then((d) => toast(`Opened “${d.name}”`)).catch((err) => toast('Could not open file: ' + err.message, true));
     });
-    // drag & drop a design file anywhere
-    window.addEventListener('dragover', (e) => e.preventDefault());
+    const loadImage = (f) =>
+      Reference.loadFile(f)
+        .then(() => { toast('Trace image loaded — use Centre / Outer edge / Arm to 12 to line it up'); scrollRefCard(); })
+        .catch((err) => toast(err.message, true));
+    const scrollRefCard = () => $('#ref-card').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    $('#image-input').addEventListener('change', (e) => {
+      const f = e.target.files[0];
+      e.target.value = '';
+      if (f) loadImage(f);
+    });
+    // drag & drop: an image becomes the trace image, anything else is opened as a design
+    window.addEventListener('dragover', (e) => { e.preventDefault(); document.body.classList.add('drop-hint'); });
+    window.addEventListener('dragleave', (e) => { if (!e.relatedTarget) document.body.classList.remove('drop-hint'); });
     window.addEventListener('drop', (e) => {
       e.preventDefault();
+      document.body.classList.remove('drop-hint');
       const f = e.dataTransfer.files[0];
-      if (f) Exporter.importFile(f).then((d) => toast(`Opened “${d.name}”`)).catch((err) => toast('Could not open file: ' + err.message, true));
+      if (!f) return;
+      if (f.type.startsWith('image/')) loadImage(f);
+      else Exporter.importFile(f).then((d) => toast(`Opened “${d.name}”`)).catch((err) => toast('Could not open file: ' + err.message, true));
+    });
+    // paste an image from the clipboard
+    window.addEventListener('paste', (e) => {
+      const tag = (e.target.tagName || '').toLowerCase();
+      if (tag === 'input' || tag === 'textarea') return;
+      const item = Array.from(e.clipboardData ? e.clipboardData.items : []).find((i) => i.type.startsWith('image/'));
+      if (item) { e.preventDefault(); loadImage(item.getAsFile()); }
     });
 
     window.addEventListener('keydown', onKey);
@@ -478,6 +526,8 @@
     WS.on('tool', updateToolUI);
     WS.on('cursor', updateCursor);
     WS.on('cutinfo', updatePieces);
+    WS.on('reference', refreshBindings);
+    Reference.init();
 
     refreshBindings();
     renderSelection();

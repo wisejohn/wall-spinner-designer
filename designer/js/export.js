@@ -48,13 +48,16 @@
   // ---------- JSON ----------
   X.saveJSON = () => {
     const data = Object.assign({}, S.design, { format: WS.FILE_TAG, version: 1, savedAt: new Date().toISOString() });
+    if (S.ref && S.ref.include) data.reference = Reference.toJSON();
     X.download(JSON.stringify(data, null, 2), `${slug()}.spinner.json`, 'application/json');
   };
 
   X.importFile = (file) =>
     file.text().then((txt) => {
-      const d = WS.normalizeDesign(JSON.parse(txt));
+      const raw = JSON.parse(txt);
+      const d = WS.normalizeDesign(raw);
       WS.setDesign(d, false);
+      if (raw.reference && raw.reference.src) return Reference.set(raw.reference).then(() => d, () => d);
       return d;
     });
 

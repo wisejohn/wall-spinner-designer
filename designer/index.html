@@ -110,6 +110,33 @@
         <div id="sel-body"></div>
       </section>
 
+      <section class="card" id="ref-card">
+        <h2>Trace image <span class="hint">drop, paste or load</span></h2>
+        <div class="row gap">
+          <button data-action="ref-load" class="grow">Load image…</button>
+          <button data-action="ref-clear" class="ref-only">Remove</button>
+        </div>
+        <div class="ref-only ref-controls">
+          <div class="checks">
+            <label><input type="checkbox" data-ref="visible"> Show</label>
+            <label title="Multiply the image over the arms so dark lines stay visible"><input type="checkbox" data-ref="onTop"> Over arms</label>
+            <label title="Embed the image in saved design files"><input type="checkbox" data-ref="include"> Save in file</label>
+          </div>
+          <label class="field"><span>Image opacity</span><input type="range" min="0.05" max="1" step="0.05" data-ref="opacity"><output data-refout="opacity" data-pct></output></label>
+          <label class="field"><span>Arm opacity</span><input type="range" min="0.1" max="1" step="0.05" data-view="discAlphaTracing"><output data-out="view.discAlphaTracing" data-pct></output></label>
+          <label class="field"><span>Width</span><input type="range" min="20" max="1200" step="1" data-ref="size"><input type="number" min="1" step="1" data-ref="size" class="num"></label>
+          <label class="field"><span>Rotation</span><input type="range" min="-180" max="180" step="0.5" data-ref="rot"><input type="number" step="0.5" data-ref="rot" class="num"></label>
+          <label class="field"><span>Offset X / Y</span><span class="row gap"><input type="number" step="0.5" data-ref="x" class="num"><input type="number" step="0.5" data-ref="y" class="num"></span><span></span></label>
+          <div class="muted">Line it up by clicking on the image:</div>
+          <div class="btn-grid">
+            <button data-action="ref-pick-centre" title="Click the centre of the image's hub; it moves to the disc centre">Centre</button>
+            <button data-action="ref-pick-rim" title="Click the outermost tip of an arm; the image scales so it reaches the disc diameter">Outer edge</button>
+            <button data-action="ref-pick-arm" title="Click along one arm; the image rotates so that arm points to 12 o'clock">Arm to 12</button>
+          </div>
+          <button data-action="ref-fit" class="link">Reset: fit image to disc</button>
+        </div>
+      </section>
+
       <section class="card">
         <h2>Arm presets</h2>
         <select id="preset-select"></select>
@@ -208,6 +235,7 @@
   </dialog>
 
   <input type="file" id="file-input" accept=".json,application/json" hidden />
+  <input type="file" id="image-input" accept="image/*" hidden />
   <div id="print-root"></div>
   <div id="toast" class="toast" hidden></div>
 
@@ -215,6 +243,7 @@
   <script src="js/earcut.js"></script>
   <script src="js/state.js"></script>
   <script src="js/render.js"></script>
+  <script src="js/reference.js"></script>
   <script src="js/editor.js"></script>
   <script src="js/preview.js"></script>
   <script src="js/export.js"></script>

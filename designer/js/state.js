@@ -127,6 +127,7 @@
       zoom: 1, panX: 0, panY: 0,
       grid: true, snap: false, gridSize: 5,
       showBack: false, ghostCopies: false, cutPreview: false, showGuides: true,
+      discAlphaTracing: 0.55, // front disc opacity while a trace image is visible
     },
     anim: {
       playing: true, mode: 'yoyo',

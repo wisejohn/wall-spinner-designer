@@ -25,7 +25,9 @@
     return { x: Math.round(p.x / g) * g, y: Math.round(p.y / g) * g };
   };
 
+  let fitted = false; // first fit can happen before layout (hidden tab); refit on first real size
   E.fit = () => {
+    fitted = W > 50 && H > 50;
     const ext = Math.max(S.design.disc.diameter / 2, R.extent(S.design));
     S.view.zoom = Math.max(0.05, (Math.min(W, H) * 0.46) / ext);
     S.view.panX = 0;
@@ -59,6 +61,7 @@
     }
     canvas.style.width = W + 'px';
     canvas.style.height = H + 'px';
+    if (!fitted && S.design) E.fit();
     render();
   }
 
@@ -142,12 +145,14 @@
     ctx.fillStyle = colors.wall;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     drawGrid();
+    if (S.ref && !S.ref.onTop) { setDiscTransform(ctx); Reference.draw(ctx); }
 
     if (S.view.showBack) {
       const off = (S.anim.offset * Math.PI) / 180;
       compositeDisc(colors.back, 0.75, (c) => { c.rotate(off); c.scale(1, -1); });
     }
-    compositeDisc(colors.front, 1);
+    compositeDisc(colors.front, S.ref && S.ref.visible ? S.view.discAlphaTracing : 1);
+    if (S.ref && S.ref.onTop) { setDiscTransform(ctx); Reference.draw(ctx); }
     if (S.view.showGuides) drawGuides();
 
     // cut preview
@@ -412,6 +417,16 @@
     }
     if (e.button !== 0) return;
 
+    if (S.tool.startsWith('ref-')) {
+      if (S.ref) {
+        if (S.tool === 'ref-centre') Reference.pickCentre(w);
+        else if (S.tool === 'ref-rim') Reference.pickRim(w);
+        else if (S.tool === 'ref-arm') Reference.pickArm(w);
+      }
+      E.setTool('select');
+      return;
+    }
+
     if (S.tool === 'pen') {
       const p = snap(w);
       if (!draft) draft = { kind: 'pen', nodes: [] };
@@ -626,6 +641,7 @@
     WS.on('selection', E.draw);
     WS.on('view', () => { E.draw(); scheduleCut(); });
     WS.on('fit', () => E.fit());
+    WS.on('reference', E.draw);
   };
 
   window.Editor = E;
