@@ -172,6 +172,16 @@
           <label><input type="color" data-bind="colors.back"> Back</label>
           <label><input type="color" data-bind="colors.wall"> Wall</label>
         </div>
+        <label class="check-line"><input type="checkbox" data-bind="colors.radial"> Radial colour (inner → outer)</label>
+        <div class="radial-controls">
+          <div class="colors">
+            <label><input type="color" data-bind="colors.frontOuter"> Front outer</label>
+            <label><input type="color" data-bind="colors.backOuter"> Back outer</label>
+          </div>
+          <label class="field"><span>Change at</span><input type="range" min="0" max="100" step="1" data-bind="colors.split"><output data-out="design.colors.split" data-unit="%"></output></label>
+          <label class="field"><span>Blend</span><input type="range" min="0" max="60" step="1" data-bind="colors.blend"><output data-out="design.colors.blend" data-unit="%"></output></label>
+          <p class="muted">Front / Back above are the inner colours. “Change at” is a percentage of the disc radius.</p>
+        </div>
       </section>
 
       <section class="card help">

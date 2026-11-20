@@ -19,7 +19,11 @@
     boltCircle: 50,
   });
 
-  const defaultColors = () => ({ front: '#b8784e', back: '#6e4630', wall: '#e9e5de' });
+  const defaultColors = () => ({
+    front: '#b8784e', back: '#6e4630', wall: '#e9e5de',
+    // radial colour: inner colour = front/back, outer colour beyond the split radius
+    radial: false, frontOuter: '#d4481f', backOuter: '#8e2f16', split: 60, blend: 12,
+  });
 
   // ---------------- presets ----------------
   // Every preset is a function (disc) => shapes[] in arm space (arm points to 12 o'clock).

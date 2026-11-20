@@ -58,7 +58,7 @@
 
   function ensureBitmaps(sizePx) {
     const c = S.design.colors;
-    const key = [S.version, sizePx, c.front, c.back].join('|');
+    const key = [S.version, sizePx, JSON.stringify(c)].join('|');
     if (bitmaps.key === key) return bitmaps;
     const ext = Math.max(S.design.disc.diameter / 2, R.extent(S.design)) * 1.02;
     const scale = sizePx / (2 * ext);
@@ -70,7 +70,7 @@
       R.paintDisc(x, S.design, color);
       return cv;
     };
-    bitmaps = { key, front: make(c.front), back: make(c.back), size: sizePx, ext };
+    bitmaps = { key, front: make('front'), back: make('back'), size: sizePx, ext };
     return bitmaps;
   }
 

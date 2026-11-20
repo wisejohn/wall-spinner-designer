@@ -149,9 +149,9 @@
 
     if (S.view.showBack) {
       const off = (S.anim.offset * Math.PI) / 180;
-      compositeDisc(colors.back, 0.75, (c) => { c.rotate(off); c.scale(1, -1); });
+      compositeDisc('back', 0.75, (c) => { c.rotate(off); c.scale(1, -1); });
     }
-    compositeDisc(colors.front, S.ref && S.ref.visible ? S.view.discAlphaTracing : 1);
+    compositeDisc('front', S.ref && S.ref.visible ? S.view.discAlphaTracing : 1);
     if (S.ref && S.ref.onTop) { setDiscTransform(ctx); Reference.draw(ctx); }
     if (S.view.showGuides) drawGuides();
 

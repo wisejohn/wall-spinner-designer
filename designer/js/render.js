@@ -27,7 +27,29 @@
 
   // Paint a full disc into ctx (already transformed into disc space, mm).
   // Must be a dedicated layer: clip-to-disc and holes use compositing.
+  // Fill style for a disc: a plain colour, or a radial gradient (inner colour -> outer colour)
+  // centred on the axle, built in the ctx's current (disc-space, mm) transform.
+  R.discFill = (ctx, design, which) => {
+    const c = design.colors;
+    const inner = which === 'back' ? c.back : c.front;
+    if (!c.radial) return inner;
+    const outer = which === 'back' ? c.backOuter : c.frontOuter;
+    const rad = design.disc.diameter / 2;
+    const reach = Math.max(rad, R.extent(design)) * 1.01;
+    const split = (Math.max(0, Math.min(100, c.split)) / 100) * rad;
+    const half = (Math.max(0, c.blend) / 100) * rad / 2;
+    const clamp = (v) => Math.max(0, Math.min(1, v / reach));
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, reach);
+    g.addColorStop(0, inner);
+    g.addColorStop(clamp(split - half), inner);
+    g.addColorStop(Math.max(clamp(split - half), clamp(split + half)), outer);
+    g.addColorStop(1, outer);
+    return g;
+  };
+
+  // color: a CSS colour, or 'front' / 'back' to use the design's (possibly radial) disc colour.
   R.paintDisc = (ctx, design, color, opts = {}) => {
+    if (color === 'front' || color === 'back') color = R.discFill(ctx, design, color);
     const c = R.getCache();
     const d = design.disc;
     const N = R.spokes(design);

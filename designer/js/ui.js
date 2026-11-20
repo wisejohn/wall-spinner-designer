@@ -37,8 +37,9 @@
     const outText = (o, v) => (o.textContent = o.hasAttribute('data-pct') ? Math.round(v * 100) + '%' : fmt(v) + (o.dataset.unit || ''));
     $$('output[data-out]').forEach((o) => {
       const [scope, ...rest] = o.dataset.out.split('.');
-      outText(o, getPath({ anim: S.anim, tools: S.tools, view: S.view }[scope], rest.join('.')));
+      outText(o, getPath({ anim: S.anim, tools: S.tools, view: S.view, design: S.design }[scope], rest.join('.')));
     });
+    $('.radial-controls').hidden = !S.design.colors.radial;
     $('#ref-card').classList.toggle('has-ref', !!S.ref);
     if (S.ref) {
       $$('[data-ref]').forEach((el) => writeInput(el, S.ref[el.dataset.ref]));
