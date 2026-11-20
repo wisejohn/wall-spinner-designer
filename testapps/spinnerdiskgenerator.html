@@ -1,0 +1,659 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Radial Spoke SVG Generator</title>
+    <style>
+      :root {
+        /*   --bg: #0f172a; 
+        --panel: #1e293b;*/
+        --border: #334155;
+        --text: #f8fafc;
+        --muted: #94a3b8;
+        --accent: #38bdf8;
+        --accent-hover: #0284c7;
+        --danger: #ef4444;
+      }
+
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      }
+
+      body {
+        background: var(--bg);
+        color: var(--text);
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      header {
+        padding: 12px 24px;
+        background: var(--panel);
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      header h1 {
+        font-size: 1.1rem;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+      }
+
+      .main-container {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      /* Controls Sidebar */
+      .sidebar {
+        width: 300px;
+        background: var(--panel);
+        border-right: 1px solid var(--border);
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 20px;
+        overflow-y: auto;
+      }
+
+      .control-group {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .control-group label {
+        font-size: 0.85rem;
+        color: var(--muted);
+        display: flex;
+        justify-content: space-between;
+      }
+
+      .control-group label span {
+        color: var(--text);
+        font-weight: 600;
+      }
+
+      input[type="range"] {
+        width: 100%;
+        accent-color: var(--accent);
+        cursor: pointer;
+      }
+
+      .checkbox-row {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 0.85rem;
+        color: var(--text);
+        cursor: pointer;
+      }
+
+      .btn-row {
+        display: flex;
+        gap: 8px;
+      }
+
+      button {
+        flex: 1;
+        padding: 10px 12px;
+        border: none;
+        border-radius: 6px;
+        font-size: 0.85rem;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s;
+      }
+
+      .btn-primary {
+        background: var(--accent);
+        color: #0f172a;
+      }
+
+      .btn-primary:hover {
+        background: var(--accent-hover);
+        color: #fff;
+      }
+
+      .btn-secondary {
+        background: #334155;
+        color: var(--text);
+      }
+
+      .btn-secondary:hover {
+        background: #475569;
+      }
+
+      .btn-danger {
+        background: rgba(239, 68, 68, 0.15);
+        color: var(--danger);
+        border: 1px solid rgba(239, 68, 68, 0.3);
+      }
+
+      .btn-danger:hover {
+        background: var(--danger);
+        color: #fff;
+      }
+
+      .instructions {
+        font-size: 0.8rem;
+        color: var(--muted);
+        line-height: 1.5;
+        background: rgba(15, 23, 42, 0.5);
+        padding: 12px;
+        border-radius: 6px;
+        border: 1px solid var(--border);
+      }
+
+      /* Workspace Grid */
+      .workspace {
+        flex: 1;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 1px;
+        background: var(--border);
+      }
+
+      .pane {
+        background: var(--bg);
+        display: flex;
+        flex-direction: column;
+        position: relative;
+        overflow: hidden;
+      }
+
+      .pane-header {
+        position: absolute;
+        top: 12px;
+        left: 16px;
+        font-size: 0.8rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: var(--muted);
+        pointer-events: none;
+        z-index: 10;
+      }
+
+      .canvas-wrapper {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+      }
+
+      svg {
+        width: 100%;
+        height: 100%;
+        max-width: 550px;
+        max-height: 550px;
+        background: #ffffff;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        user-select: none;
+      }
+
+      #editor-svg {
+        cursor: crosshair;
+      }
+
+      .handle {
+        fill: var(--accent);
+        stroke: #0f172a;
+        stroke-width: 2;
+        cursor: grab;
+        transition: r 0.1s;
+      }
+
+      .handle:hover {
+        r: 7;
+        fill: #fff;
+      }
+
+      .handle:active {
+        cursor: grabbing;
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>Radial Spoke SVG Generator</h1>
+      <div style="display: flex; gap: 10px">
+        <button class="btn-secondary" id="copy-btn">Copy SVG Code</button>
+        <button class="btn-primary" id="download-btn">Download .SVG</button>
+      </div>
+    </header>
+
+    <div class="main-container">
+      <!-- Controls -->
+      <aside class="sidebar">
+        <div class="control-group">
+          <label>Number of Spokes <span id="val-spokes">6</span></label>
+          <input type="range" id="spokes" min="1" max="36" value="6" />
+        </div>
+
+        <div class="control-group">
+          <label>Center Disk Diameter <span id="val-disk">120</span></label>
+          <input
+            type="range"
+            id="disk-diameter"
+            min="0"
+            max="300"
+            value="120"
+          />
+        </div>
+
+        <div class="control-group">
+          <label>Center Hole Diameter <span id="val-hole">40</span></label>
+          <input type="range" id="hole-diameter" min="0" max="280" value="40" />
+        </div>
+
+        <div class="control-group">
+          <label>Fill Color <span id="val-color">#38bdf8</span></label>
+          <input
+            type="color"
+            id="fill-color"
+            value="#38bdf8"
+            style="
+              width: 100%;
+              height: 34px;
+              border: none;
+              background: none;
+              cursor: pointer;
+            "
+          />
+        </div>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="smooth-curve" />
+          Smooth Arm Curves (Catmull-Rom)
+        </label>
+
+        <label class="checkbox-row">
+          <input type="checkbox" id="mirror-arm" />
+          Mirror Arm Symmetrically
+        </label>
+
+        <div class="btn-row">
+          <button class="btn-secondary" id="undo-btn">Undo Point</button>
+          <button class="btn-danger" id="clear-btn">Clear Arm</button>
+        </div>
+
+        <button class="btn-secondary" id="preset-btn">
+          Reset to Default Blade
+        </button>
+
+        <div class="instructions">
+          <strong>How to draw:</strong><br />
+          • <b>Click</b> on the left grid to add points.<br />
+          • <b>Drag</b> blue handles to reshape.<br />
+          • <b>Right-click</b> a handle to delete it.<br />
+          • Overlap your arm slightly into the dashed center disk so it merges
+          cleanly!
+        </div>
+      </aside>
+
+      <!-- Dual Viewport -->
+      <main class="workspace">
+        <!-- Left: Arm Editor -->
+        <div class="pane">
+          <div class="pane-header">1. Draw Single Arm (12 o'clock)</div>
+          <div class="canvas-wrapper">
+            <svg id="editor-svg" viewBox="-250 -250 500 500">
+              <defs>
+                <pattern
+                  id="grid"
+                  width="25"
+                  height="25"
+                  patternUnits="userSpaceOnUse"
+                >
+                  <path
+                    d="M 25 0 L 0 0 0 25"
+                    fill="none"
+                    stroke="#1e293b"
+                    stroke-width="1"
+                  />
+                </pattern>
+              </defs>
+              <rect
+                x="-250"
+                y="-250"
+                width="500"
+                height="500"
+                fill="url(#grid)"
+              />
+
+              <!-- Center Axes -->
+              <line
+                x1="-250"
+                y1="0"
+                x2="250"
+                y2="0"
+                stroke="#334155"
+                stroke-dasharray="4 4"
+              />
+              <line
+                x1="0"
+                y1="-250"
+                x2="0"
+                y2="250"
+                stroke="#334155"
+                stroke-dasharray="4 4"
+              />
+
+              <!-- Reference Center Disk & Hole -->
+              <circle
+                id="ref-disk"
+                cx="0"
+                cy="0"
+                r="60"
+                fill="rgba(56, 189, 248, 0.1)"
+                stroke="#38bdf8"
+                stroke-dasharray="4 4"
+              />
+              <circle
+                id="ref-hole"
+                cx="0"
+                cy="0"
+                r="20"
+                fill="#0b1120"
+                stroke="#94a3b8"
+                stroke-dasharray="3 3"
+              />
+
+              <!-- User Arm Polygon -->
+              <path
+                id="editor-arm-path"
+                fill="rgba(56, 189, 248, 0.35)"
+                stroke="#38bdf8"
+                stroke-width="2"
+              />
+              <g id="handles-layer"></g>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Right: Live Radial Preview -->
+        <div class="pane">
+          <div class="pane-header">2. Live Radial SVG Output</div>
+          <div class="canvas-wrapper">
+            <svg
+              id="preview-svg"
+              viewBox="-250 -250 500 500"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <!-- Generated content injected here -->
+            </svg>
+          </div>
+        </div>
+      </main>
+    </div>
+
+    <script>
+      // State
+      let points = [];
+      let draggingIndex = null;
+
+      // Default blade shape pointing upward (negative Y)
+      const defaultPoints = [
+        { x: -10, y: -45 },
+        { x: 10, y: -45 },
+        { x: 100, y: -50 },
+        { x: 120, y: -100 },
+        { x: -115, y: -200 },
+        { x: 90, y: -75 },
+        { x: 0, y: -55 },
+      ];
+
+      // DOM Elements
+      const editorSvg = document.getElementById("editor-svg");
+      const previewSvg = document.getElementById("preview-svg");
+      const editorArmPath = document.getElementById("editor-arm-path");
+      const handlesLayer = document.getElementById("handles-layer");
+      const refDisk = document.getElementById("ref-disk");
+      const refHole = document.getElementById("ref-hole");
+
+      const spokesInput = document.getElementById("spokes");
+      const diskInput = document.getElementById("disk-diameter");
+      const holeInput = document.getElementById("hole-diameter");
+      const colorInput = document.getElementById("fill-color");
+      const smoothCheckbox = document.getElementById("smooth-curve");
+      const mirrorCheckbox = document.getElementById("mirror-arm");
+
+      // Convert mouse event to SVG coordinate space (-250 to 250)
+      function getSvgCoords(evt) {
+        const pt = editorSvg.createSVGPoint();
+        pt.x = evt.clientX;
+        pt.y = evt.clientY;
+        const svgP = pt.matrixTransform(editorSvg.getScreenCTM().inverse());
+        return {
+          x: Math.round(svgP.x),
+          y: Math.round(svgP.y),
+        };
+      }
+
+      // Build SVG Path string (supports straight lines or smooth Catmull-Rom splines)
+      function buildPathData(pts, smooth) {
+        if (pts.length === 0) return "";
+        if (pts.length < 3 || !smooth) {
+          return (
+            pts
+              .map((p, i) => `${i === 0 ? "M" : "L"} ${p.x} ${p.y}`)
+              .join(" ") + " Z"
+          );
+        }
+
+        // Closed Catmull-Rom to Cubic Bezier conversion
+        let d = "";
+        const n = pts.length;
+        for (let i = 0; i < n; i++) {
+          const p0 = pts[(i - 1 + n) % n];
+          const p1 = pts[i];
+          const p2 = pts[(i + 1) % n];
+          const p3 = pts[(i + 2) % n];
+
+          if (i === 0) d += `M ${p1.x.toFixed(1)} ${p1.y.toFixed(1)} `;
+
+          const cp1x = p1.x + (p2.x - p0.x) / 6;
+          const cp1y = p1.y + (p2.y - p0.y) / 6;
+          const cp2x = p2.x - (p3.x - p1.x) / 6;
+          const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+          d += `C ${cp1x.toFixed(1)} ${cp1y.toFixed(1)}, ${cp2x.toFixed(1)} ${cp2y.toFixed(1)}, ${p2.x.toFixed(1)} ${p2.y.toFixed(1)} `;
+        }
+        return d + "Z";
+      }
+
+      // Get effective points (including mirrored points if enabled)
+      function getEffectivePoints() {
+        if (!mirrorCheckbox.checked || points.length === 0) return points;
+        const mirrored = [...points]
+          .reverse()
+          .map((p) => ({ x: -p.x, y: p.y }));
+        return [...points, ...mirrored];
+      }
+
+      // Render both Editor and Final Radial Output
+      function render() {
+        const spokes = parseInt(spokesInput.value, 10);
+        const diskDiam = parseInt(diskInput.value, 10);
+        let holeDiam = parseInt(holeInput.value, 10);
+
+        // Prevent hole from exceeding disk diameter
+        if (holeDiam > diskDiam && diskDiam > 0) {
+          holeDiam = diskDiam;
+          holeInput.value = holeDiam;
+        }
+
+        // Update UI labels
+        document.getElementById("val-spokes").textContent = spokes;
+        document.getElementById("val-disk").textContent = diskDiam;
+        document.getElementById("val-hole").textContent = holeDiam;
+        document.getElementById("val-color").textContent = colorInput.value;
+
+        const diskR = diskDiam / 2;
+        const holeR = holeDiam / 2;
+        const fillColor = colorInput.value;
+        const smooth = smoothCheckbox.checked;
+
+        // Update reference circles in Editor
+        refDisk.setAttribute("r", diskR);
+        refHole.setAttribute("r", holeR);
+
+        // Update Editor Arm Path
+        const effectivePts = getEffectivePoints();
+        const armPathData = buildPathData(effectivePts, smooth);
+        editorArmPath.setAttribute("d", armPathData);
+
+        // Render Draggable Handles
+        handlesLayer.innerHTML = "";
+        points.forEach((pt, idx) => {
+          const circle = document.createElementNS(
+            "http://www.w3.org/2000/svg",
+            "circle",
+          );
+          circle.setAttribute("cx", pt.x);
+          circle.setAttribute("cy", pt.y);
+          circle.setAttribute("r", 5);
+          circle.setAttribute("class", "handle");
+
+          // Start dragging handle
+          circle.addEventListener("mousedown", (e) => {
+            e.stopPropagation();
+            if (e.button === 0) draggingIndex = idx;
+          });
+
+          // Right-click to delete point
+          circle.addEventListener("contextmenu", (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            points.splice(idx, 1);
+            render();
+          });
+
+          handlesLayer.appendChild(circle);
+        });
+
+        // Build Clean Final SVG Output
+        // Uses a <mask> so the center hole punches cleanly through both the disk and overlapping spoke bases
+        let spokesMarkup = "";
+        if (armPathData) {
+          for (let i = 0; i < spokes; i++) {
+            const angle = (360 / spokes) * i;
+            const strokecolor = i == 0 ? "red" : fillColor;
+            //spokesMarkup += `    <path d="${armPathData}" transform="rotate(${angle})" />\n`;
+            spokesMarkup += ` <use href='#spoke' transform="rotate(${angle})" stroke="${strokecolor}" />\n`;
+          }
+        }
+
+        previewSvg.innerHTML = `
+  <defs>
+    <mask id="center-hole-mask">
+      <rect x="-250" y="-250" width="500" height="500" fill="black" />
+	  <circle cx="0" cy="0" r="250" fill="white" />
+      ${holeR > 0 ? `<circle cx="0" cy="0" r="${holeR}" fill="black" />` : ""}
+
+    </mask>
+	 <path id="spoke" d="${armPathData}" />
+	  <g id="thing" mask="url(#center-hole-mask)">
+ 
+${spokesMarkup}   
+ ${diskR > 0 ? `<circle cx="0" cy="0" r="${diskR}" />` : ""}
+ </g>
+  </defs>
+
+<use href="#thing" transform="scale(1,-1) rotate(15)" fill="gray"  />
+ <use  fill="${fillColor}" href="#thing"  />
+
+
+`;
+      }
+
+      // Canvas Interaction Events
+      editorSvg.addEventListener("mousedown", (e) => {
+        if (e.button !== 0 || draggingIndex !== null) return;
+        const coords = getSvgCoords(e);
+        points.push(coords);
+        render();
+      });
+
+      window.addEventListener("mousemove", (e) => {
+        if (draggingIndex === null) return;
+        points[draggingIndex] = getSvgCoords(e);
+        render();
+      });
+
+      window.addEventListener("mouseup", () => {
+        draggingIndex = null;
+      });
+
+      // Control Listeners
+      [
+        spokesInput,
+        diskInput,
+        holeInput,
+        colorInput,
+        smoothCheckbox,
+        mirrorCheckbox,
+      ].forEach((el) => {
+        el.addEventListener("input", render);
+      });
+
+      document.getElementById("undo-btn").addEventListener("click", () => {
+        points.pop();
+        render();
+      });
+
+      document.getElementById("clear-btn").addEventListener("click", () => {
+        points = [];
+        render();
+      });
+
+      document.getElementById("preset-btn").addEventListener("click", () => {
+        points = JSON.parse(JSON.stringify(defaultPoints));
+        render();
+      });
+
+      // Export Actions
+      function getExportableSvgString() {
+        const clone = previewSvg.cloneNode(true);
+        clone.removeAttribute("id");
+        return new XMLSerializer().serializeToString(clone);
+      }
+
+      document.getElementById("copy-btn").addEventListener("click", (e) => {
+        navigator.clipboard.writeText(getExportableSvgString());
+        const originalText = e.target.textContent;
+        e.target.textContent = "Copied!";
+        setTimeout(() => (e.target.textContent = originalText), 1500);
+      });
+
+      document.getElementById("download-btn").addEventListener("click", () => {
+        const svgString = getExportableSvgString();
+        const blob = new Blob([svgString], {
+          type: "image/svg+xml;charset=utf-8",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `radial-spokes-${spokesInput.value}.svg`;
+        a.click();
+        URL.revokeObjectURL(url);
+      });
+
+      // Initialize
+      points = JSON.parse(JSON.stringify(defaultPoints));
+      render();
+    </script>
+  </body>
+</html>

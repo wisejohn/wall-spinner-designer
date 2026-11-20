@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Load the Paper.js library -->
+<style>
+	html,
+body {
+    margin: 0;
+    overflow: hidden;
+    height: 100%;
+}
+
+/* Scale canvas with resize attribute to full size */
+canvas[resize] {
+    width: 100%;
+    height: 100%;
+}
+	</style>
+
+
+
+<script type="text/javascript" src="paper-full.js"></script>
+<!-- Define inlined PaperScript associate it with myCanvas -->
+<script type="text/paperscript" canvas="myCanvas">
+// The amount of segment points we want to create:
+var length1 =100;
+var length2 =100;
+var angle1 = 0; 
+var angle2 = 0;
+
+var innerradius = 50;
+
+var clones = 12;
+
+
+var point0 = new Point(view.center);
+var group = new Group();
+var clonedGroup;
+
+
+//var vector1 = new Point(0, 0);
+
+var myCircle = new Path.Circle(point0, innerradius);
+myCircle.fillColor = 'black';
+
+
+
+var path = new Path();
+  
+path.selected = true;
+function draw(event) {
+    path.remove();
+    myCircle.radius = innerradius
+ path = new Path({
+	// 80% black:
+	strokeColor: [0],
+	strokeWidth: 20,
+	strokeCap: 'square'
+});
+  var vector2 = new Point(0, 0);
+    var vector1 = new Point({
+        length: length1,
+        angle: angle1
+    });
+     var vector2 = new Point({
+        length: length2,
+        angle: angle1 + angle2
+    });
+    var vector0 = new Point({
+        length: innerradius,
+        angle: 0
+    });
+    
+    
+   // path.add(point0);
+    var point1 = point0 + vector0
+    
+    path.add(point1);
+    var p2 = point1+vector1;
+    path.add(p2);
+    var p3 = p2+vector2;
+    path.add(p3);
+    
+    group.remove();
+    group = new Group();
+    
+    var boundingcircle = new Path.Circle(point0, 400);
+     group.addChild(boundingcircle);
+  
+  if(dosmooth)    path.smooth();
+  
+  var angle = 360 / clones;
+  
+    for(var i = 0; i < clones; i++) {
+    var clonedPath = path.clone().rotate(angle * i, point0);
+    group.addChild(clonedPath);
+    
+   
+};
+    if(clonedGroup)    clonedGroup.remove();
+    clonedGroup = group.clone();
+
+    clonedGroup.scale(1, -1)
+  //  clonedGroup.strokeColor ='blue'
+    
+text.content = "angle1 up/down: "+angle1
+text.content += "\n"
+text.content += "angle2 right/left: "+angle2
+text.content += "\ns: smooth: "+dosmooth
+text.content += "\nspace: animate: " +doanimate
+text.content += "\npageUp/pageDown clones: " +clones
+
+
+path.remove()
+
+}
+
+
+ var doanimate = true;
+  var dosmooth = true;
+ var animatespeed = 0.5;
+function onFrame(event) {
+    // Each frame, rotate the path 3 degrees around the point
+    // we defined earlier:
+    
+	if(doanimate)
+	{
+	group.rotate(animatespeed, point0);
+    clonedGroup.rotate(-animatespeed, point0);
+	}
+}
+
+
+var text = new PointText({
+    position: [20, 20],
+    fillColor: 'black',
+    justification: 'left',
+    fontSize: 20
+});
+
+
+var coreboxPlus = new Path.Circle({
+    center: [50, 50],
+  
+    radius: 20,
+
+    fillColor: 'green'
+});
+
+// Whenever the user presses the mouse:
+function onMouseDown(event) {
+
+    if (coreboxPlus.contains(event.point)) {
+        innerradius++
+    } 
+	
+	
+	draw()
+}
+function onKeyDown(event) {
+	
+	
+	switch (event.key) {
+  case 'up':
+    angle1++;
+    draw();
+    break;
+  case 'down':
+      angle1--;
+        draw();
+      break;
+  case 'right':
+    angle2 += 1;
+      draw();
+    break;
+  case 'left':
+      angle2 -= 1;
+        draw();
+      break;
+      
+      case 'page-up':
+    clones += 1;
+      draw();
+    break;
+  case 'page-down':
+      clones -= 1;
+        draw();
+      break;
+      
+  case 'space':
+   doanimate = !doanimate;
+   draw();
+    break;
+      case 's':
+   dosmooth = !dosmooth;
+   draw();
+    break;
+  default:
+  draw();
+    console.log('You typed ' + event.key + '.');
+}
+	
+	
+	
+	
+
+	
+}
+
+draw()
+
+</script>
+</head>
+<body>
+	<canvas id="myCanvas" resize></canvas>
+</body>
+</html>

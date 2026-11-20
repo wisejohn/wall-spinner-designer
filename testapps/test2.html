@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html>
+<head>
+<!-- Load the Paper.js library -->
+<style>
+	html,
+body {
+    margin: 0;
+    overflow: hidden;
+    height: 100%;
+}
+
+/* Scale canvas with resize attribute to full size */
+canvas[resize] {
+    width: 100%;
+    height: 100%;
+}
+	</style>
+
+
+
+<script type="text/javascript" src="paper-full.js"></script>
+<script type="text/paperscript" canvas="myCanvas">
+	
+var centerPoint = new Point(view.center)
+// The amount of segment points we want to create:
+var spokeCount = 8
+
+
+var coreradius = 50
+var ring1width = 150
+var ring2width = 150
+
+var ring1angle = 0
+var ring2angle = 0
+
+var pathWidth0 = 8;
+var pathWidth1 = 5;
+var pathWidth2 = 2;
+
+var group1
+var group2
+var coreCircle
+var spokePath;
+  
+function draw() {
+	if(coreCircle)    coreCircle.remove();
+	if(spokePath)    spokePath.remove();
+	if(group1)    group1.remove();
+	if(group2)    group2.remove();
+	
+	var r1 = coreradius + ring1width;
+	var r2 = r1 + ring2width;
+	
+	
+	coreCircle = new Path.Circle(centerPoint, coreradius);
+	coreCircle.strokeColor = 'gray';
+
+	
+   
+   var vector0 = new Point({	length: coreradius, angle: 0	});
+	var vector0a = vector0.clone()
+	vector0a.angle -= pathWidth0;
+	var vector0b = vector0.clone()
+	vector0b.angle += pathWidth0;	
+   
+ 
+	var vector1 = new Point({	length: r1, angle: ring1angle	});
+	var vector1a = vector1.clone()
+	var vector1b = vector1.clone()
+	vector1a.angle -= pathWidth1;
+	vector1b.angle += pathWidth1;	
+	
+	var vector2 = new Point({	length: r2, angle: ring2angle	});
+	var vector2a = vector2.clone()
+	var vector2b = vector2.clone()
+	vector2a.angle -= pathWidth2
+	vector2b.angle += pathWidth2
+	
+	
+    
+ 
+	spokePath = new Path({
+		//strokeColor: [0],
+		//strokeWidth: 1,
+		//strokeCap: 'square',
+		fillColor: 'black'
+	});
+	
+   spokePath.add(centerPoint + vector0a);
+    spokePath.add(centerPoint + vector1a);
+    spokePath.add(centerPoint + vector2a);
+   // spokePath.add(centerPoint + vector2);
+    spokePath.add(centerPoint + vector2b);
+    spokePath.add(centerPoint + vector1b);
+   spokePath.add(centerPoint + vector0b);
+
+	if(dosmooth)    spokePath.smooth();
+    
+    group1 = new Group();
+  
+	group1.addChild(spokePath);
+  
+	var angle = 360 / spokeCount;
+    for(var i = 1; i < spokeCount; i++) {
+		var clonedPath = spokePath.clone().rotate(angle * i, centerPoint);
+		group1.addChild(clonedPath);
+	};
+
+    group1.addChild(new Path.Circle(centerPoint, r2));
+
+    group2 = group1.clone().scale(1, -1);
+	group1.selected = true;
+
+ 
+text.content = "pathWidth2 ./,: "+pathWidth2
+text.content += "\nangle1 up/down: "+ring1angle
+text.content += ""
+text.content += "\nangle2 right/left: "+ring2angle
+text.content += "\ns: smooth: "+dosmooth
+text.content += "\nspace: animate: " +doanimate
+text.content += "\npageUp/pageDown spokeCount: " +spokeCount
+
+
+}
+
+
+ var doanimate = false;
+  var dosmooth = false;
+ var animatespeed = 0.5;
+function onFrame(event) {
+  	if(doanimate)
+	{
+		group1.rotate(animatespeed, centerPoint);
+		group2.rotate(-animatespeed, centerPoint);
+	}
+}
+
+
+var text = new PointText({
+    position: [20, 20],
+    fillColor: 'black',
+    justification: 'left',
+    fontSize: 20
+});
+
+
+var coreboxPlus = new Path.Circle({
+    center: [50, 200],
+	radius: 20,
+    fillColor: 'green'
+});
+
+var coreboxMinus = new Path.Circle({
+    center: [90, 200],
+	radius: 20,
+    fillColor: 'red'
+});
+
+// Whenever the user presses the mouse:
+function onMouseDown(event) {
+
+    if (coreboxPlus.contains(event.point)) {
+        coreradius++
+		draw()
+    }
+	if (coreboxMinus.contains(event.point)) {
+        coreradius--
+		draw()
+    }
+}
+
+
+
+function onKeyDown(event) {
+	
+	
+	switch (event.key) {
+  case 'up':
+    ring1angle++;
+    draw();
+    break;
+  case 'down':
+      ring1angle--;
+        draw();
+      break;
+  case 'right':
+    ring2angle += 1;
+      draw();
+    break;
+  case 'left':
+      ring2angle -= 1;
+        draw();
+      break;
+ 
+ 
+   case '.':
+    pathWidth2 += 0.1;
+      draw();
+    break;
+  case ',':
+      pathWidth2 -= 0.1;
+        draw();
+      break;
+ 
+      case 'page-up':
+    spokeCount += 1;
+      draw();
+    break;
+  case 'page-down':
+      spokeCount -= 1;
+        draw();
+      break;
+      
+  case 'space':
+   doanimate = !doanimate;
+  draw()
+    break;
+  case 's':
+   dosmooth = !dosmooth;
+   draw();
+    break;
+  default:
+  
+    console.log('You typed ' + event.key + '.');
+}
+	
+	
+	
+	
+
+	
+}
+
+draw()
+
+</script>
+</head>
+<body>
+	<canvas id="myCanvas" resize></canvas>
+</body>
+</html>

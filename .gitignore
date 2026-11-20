@@ -1,0 +1,7 @@
+.DS_Store
+Thumbs.db
+*.pdn
+node_modules/
+.claude/settings.local.json
+inspiration/
+currentRealWorldWallSpinner.jpg
