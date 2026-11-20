@@ -168,6 +168,23 @@
     setDiscTransform(ctx);
     for (const it of c.items) {
       const selected = it.id === S.sel.shapeId;
+      if (it.cut) {
+        // cutouts: solid outline on the master, faint dashed outlines on the repeats
+        const M = R.cutRepeats(S.design);
+        ctx.strokeStyle = selected ? '#d9480f' : 'rgba(217,72,15,0.7)';
+        for (let k = M - 1; k >= 0; k--) {
+          ctx.save();
+          ctx.rotate((k * TAU) / M);
+          ctx.lineWidth = (k === 0 ? (selected ? 2 : 1.2) : 0.8) / z;
+          ctx.setLineDash(k === 0 ? [] : [3 / z, 3 / z]);
+          ctx.globalAlpha = k === 0 ? 1 : 0.5;
+          ctx.stroke(it.path);
+          if (it.mpath) ctx.stroke(it.mpath);
+          ctx.restore();
+        }
+        ctx.setLineDash([]);
+        continue;
+      }
       ctx.lineWidth = (selected ? 2 : 1) / z;
       ctx.strokeStyle = selected ? '#1f7ae0' : 'rgba(31,122,224,0.55)';
       ctx.stroke(it.path);
@@ -332,12 +349,14 @@
 
   function hitShape(w) {
     const c = R.getCache();
-    const N = R.spokes(S.design);
     hitCtx.lineWidth = 8 / S.view.zoom;
-    for (let k = 0; k < N; k++) {
-      const p = G.rotate(w, (-k * TAU) / N);
+    const maxN = Math.max(R.spokes(S.design), R.cutRepeats(S.design));
+    for (let k = 0; k < maxN; k++) {
       for (let i = c.items.length - 1; i >= 0; i--) {
         const it = c.items[i];
+        const N = R.repeatsFor(S.design, it);
+        if (k >= N) continue;
+        const p = G.rotate(w, (-k * TAU) / N);
         for (const path of [it.path, it.mpath]) {
           if (path && (hitCtx.isPointInPath(path, p.x, p.y) || hitCtx.isPointInStroke(path, p.x, p.y))) return it.id;
         }
@@ -370,6 +389,7 @@
       ? { id: WS.newId(), type: 'outline', closed: true, mirror: false, nodes }
       : { id: WS.newId(), type: 'stroke', closed: false, cap: 'round', mirror: false, nodes };
     nodes.forEach((n) => (n.w = S.tools.brushWidth));
+    if (S.tools.cutout) shape.cut = true;
     S.design.shapes.push(shape);
     WS.select(shape.id, -1);
     WS.changed(true);
@@ -399,6 +419,7 @@
     const shape = closed
       ? { id: WS.newId(), type: 'outline', closed: true, mirror: false, nodes }
       : { id: WS.newId(), type: 'stroke', closed: false, cap: 'round', mirror: false, nodes };
+    if (S.tools.cutout) shape.cut = true;
     S.design.shapes.push(shape);
     WS.select(shape.id, -1);
     WS.changed(true);

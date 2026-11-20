@@ -163,16 +163,17 @@
     const s = WS.selectedShape();
     if (!s) {
       body.innerHTML = `<div class="sel-empty">Nothing selected. Click an arm part to edit it, or draw a new one with the pen, brush or outline tool.</div>
-        <div class="muted">${S.design.shapes.length} part(s) in the arm.</div>`;
+        <div class="muted">${S.design.shapes.filter((x) => !x.cut).length} part(s) in the arm, ${S.design.shapes.filter((x) => x.cut).length} cutout(s).</div>`;
       return;
     }
     const isStroke = s.type === 'stroke';
     const n = S.sel.node >= 0 ? s.nodes[S.sel.node] : null;
     const avgW = isStroke ? s.nodes.reduce((a, m) => a + m.w, 0) / s.nodes.length : 0;
     body.innerHTML = `
-      <div class="row gap"><span class="sel-type">${isStroke ? 'Stroke (spine + width)' : 'Outline (filled shape)'}</span><span class="muted grow right">${s.nodes.length} nodes</span></div>
+      <div class="row gap"><span class="sel-type">${s.cut ? 'Cutout · ' : ''}${isStroke ? 'Stroke (spine + width)' : 'Outline (filled shape)'}</span><span class="muted grow right">${s.nodes.length} nodes</span></div>
       <div class="checks">
         <label><input type="checkbox" id="sp-mirror" ${s.mirror ? 'checked' : ''}> Mirror (M)</label>
+        <label title="Subtract this shape from the disc, repeated by the Disc card's cutout count"><input type="checkbox" id="sp-cut" ${s.cut ? 'checked' : ''}> Cutout</label>
         ${isStroke ? `<label><input type="checkbox" id="sp-closed" ${s.closed ? 'checked' : ''}> Closed loop</label>` : ''}
       </div>
       ${isStroke ? `
@@ -203,6 +204,7 @@
     `;
     const on = (id, ev, fn) => { const el = $('#' + id, body); if (el) el.addEventListener(ev, fn); };
     on('sp-mirror', 'change', (e) => { s.mirror = e.target.checked; WS.changed(true); });
+    on('sp-cut', 'change', (e) => { s.cut = e.target.checked; WS.changed(true); renderSelection(); });
     on('sp-closed', 'change', (e) => { s.closed = e.target.checked; if (s.nodes.length < 3) s.closed = false; WS.changed(true); renderSelection(); });
     on('sp-cap', 'change', (e) => { s.cap = e.target.value; WS.changed(true); });
     on('sp-wall-btn', 'click', () => { const v = +$('#sp-wall').value; if (v > 0) { s.nodes.forEach((m) => (m.w = v)); WS.changed(true); } });
@@ -277,7 +279,10 @@
   // ---------- presets ----------
   function initPresets() {
     const sel = $('#preset-select');
-    sel.innerHTML = Object.entries(WS.presets).map(([k, p]) => `<option value="${k}">${p.name}</option>`).join('');
+    const group = (label, cut) => `<optgroup label="${label}">` + Object.entries(WS.presets)
+      .filter(([, p]) => (p.kind === 'cutout') === cut)
+      .map(([k, p]) => `<option value="${k}">${p.name}</option>`).join('') + '</optgroup>';
+    sel.innerHTML = group('Arms', false) + group('Hub cutouts', true);
   }
 
   // ---------- export dialog ----------
@@ -369,7 +374,9 @@
       case 'preset-add': {
         const p = WS.presets[$('#preset-select').value];
         const shapes = p.build(S.design.disc);
-        if (name === 'preset-replace') S.design.shapes = shapes;
+        const cut = p.kind === 'cutout';
+        // "Replace" swaps only the same kind: arm presets keep cutouts and vice versa
+        if (name === 'preset-replace') S.design.shapes = S.design.shapes.filter((x) => !!x.cut !== cut).concat(shapes);
         else S.design.shapes.push(...shapes);
         WS.select(shapes[0].id, -1);
         WS.changed(true);

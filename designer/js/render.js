@@ -17,13 +17,16 @@
     const items = S.design.shapes.map((s) => {
       const d = G.shapePathData(s);
       const md = s.mirror ? G.shapePathData(G.mirrorShape(s)) : '';
-      return { id: s.id, d, md, path: new Path2D(d), mpath: md ? new Path2D(md) : null };
+      return { id: s.id, cut: !!s.cut, d, md, path: new Path2D(d), mpath: md ? new Path2D(md) : null };
     });
     cache = { version: S.version, items };
     return cache;
   };
 
   R.spokes = (design) => Math.max(1, Math.min(72, Math.round(design.disc.spokes || 1)));
+  // cutout shapes repeat around the centre on their own count, independent of the arm count
+  R.cutRepeats = (design) => Math.max(1, Math.min(72, Math.round(design.disc.cutouts || 1)));
+  R.repeatsFor = (design, it) => (it.cut ? R.cutRepeats(design) : R.spokes(design));
 
   // Paint a full disc into ctx (already transformed into disc space, mm).
   // Must be a dedicated layer: clip-to-disc and holes use compositing.
@@ -61,6 +64,7 @@
       ctx.rotate((k * TAU) / N);
       ctx.globalAlpha = opts.ghostOthers && k > 0 ? 0.28 : 1;
       for (const it of c.items) {
+        if (it.cut) continue;
         ctx.fill(it.path);
         if (it.mpath) ctx.fill(it.mpath);
       }
@@ -86,6 +90,19 @@
     }
     ctx.globalCompositeOperation = 'destination-out';
     ctx.fillStyle = '#000';
+    const cuts = c.items.filter((it) => it.cut);
+    if (cuts.length) {
+      const M = R.cutRepeats(design);
+      for (let k = 0; k < M; k++) {
+        ctx.save();
+        ctx.rotate((k * TAU) / M);
+        for (const it of cuts) {
+          ctx.fill(it.path);
+          if (it.mpath) ctx.fill(it.mpath);
+        }
+        ctx.restore();
+      }
+    }
     for (const h of R.holes(design)) {
       ctx.beginPath();
       ctx.arc(h.x, h.y, h.r, 0, TAU);

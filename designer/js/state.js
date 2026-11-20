@@ -8,6 +8,7 @@
 
   const defaultDisc = () => ({
     spokes: 5,
+    cutouts: 4, // repeat count for cutout shapes (independent of arms)
     diameter: 400,
     hubDiameter: 90,
     holeDiameter: 8,
@@ -109,6 +110,57 @@
     },
   };
 
+  // Cutout presets: subtracted from the disc, repeated `disc.cutouts` times (kind: 'cutout').
+  const fitHub = (d, min) => Math.max(d.hubDiameter / 2, min);
+  Object.assign(presets, {
+    cutWindow: {
+      name: 'Cutout: round window', kind: 'cutout',
+      build(d) {
+        const h = fitHub(d, 20), r = h * 0.2, c = P(h * 0.55, 0);
+        const k = 0.5523 * r;
+        const nodes = [
+          node(c.x, c.y - r, 1, { hi: { x: -k, y: 0 }, ho: { x: k, y: 0 }, smooth: true }),
+          node(c.x + r, c.y, 1, { hi: { x: 0, y: -k }, ho: { x: 0, y: k }, smooth: true }),
+          node(c.x, c.y + r, 1, { hi: { x: k, y: 0 }, ho: { x: -k, y: 0 }, smooth: true }),
+          node(c.x - r, c.y, 1, { hi: { x: 0, y: k }, ho: { x: 0, y: -k }, smooth: true }),
+        ];
+        return [{ id: newId(), type: 'outline', closed: true, mirror: false, cut: true, nodes }];
+      },
+    },
+    cutSlot: {
+      name: 'Cutout: curved slot', kind: 'cutout',
+      build(d) {
+        const h = fitHub(d, 20), w = Math.max(3, h * 0.14);
+        const pts = [P(h * 0.5, -28), P(h * 0.62, 0), P(h * 0.5, 28)];
+        const nodes = pts.map((p) => node(p.x, p.y, w));
+        G.autoHandles(nodes, false);
+        return [{ id: newId(), type: 'stroke', closed: false, cap: 'round', mirror: false, cut: true, nodes }];
+      },
+    },
+    cutPetal: {
+      name: 'Cutout: teardrop', kind: 'cutout',
+      build(d) {
+        const h = fitHub(d, 20);
+        const pts = [P(h * 0.25, 0), P(h * 0.6, 14), P(h * 0.8, 0), P(h * 0.6, -14)];
+        const nodes = pts.map((p) => node(p.x, p.y, 1));
+        G.autoHandles(nodes, true);
+        nodes[0].hi = nodes[0].ho = null; nodes[0].smooth = false;
+        return [{ id: newId(), type: 'outline', closed: true, mirror: false, cut: true, nodes }];
+      },
+    },
+    cutKnot: {
+      name: 'Cutout: lobed knot (pair with 4)', kind: 'cutout',
+      build(d) {
+        const h = fitHub(d, 20), w = Math.max(3, h * 0.12);
+        // spans < 90° so neighbouring copies leave a bridge to the centre
+        const pts = [P(h * 0.3, -35), P(h * 0.6, -5), P(h * 0.72, 30), P(h * 0.55, 52)];
+        const nodes = pts.map((p) => node(p.x, p.y, w));
+        G.autoHandles(nodes, false);
+        return [{ id: newId(), type: 'stroke', closed: false, cap: 'round', mirror: false, cut: true, nodes }];
+      },
+    },
+  });
+
   const defaultDesign = () => {
     const disc = defaultDisc();
     return {
@@ -126,7 +178,7 @@
     design: null,
     sel: { shapeId: null, node: -1 },
     tool: 'select',
-    tools: { brushWidth: 14, smoothing: 3 },
+    tools: { brushWidth: 14, smoothing: 3, cutout: false },
     view: {
       zoom: 1, panX: 0, panY: 0,
       grid: true, snap: false, gridSize: 5,
@@ -218,6 +270,7 @@
         closed: s.type === 'stroke' ? !!s.closed : true,
         cap: s.cap || 'round',
         mirror: !!s.mirror,
+        cut: !!s.cut,
         nodes: s.nodes.map((n) => ({
           x: +n.x || 0, y: +n.y || 0,
           hi: n.hi ? { x: +n.hi.x || 0, y: +n.hi.y || 0 } : null,

@@ -93,6 +93,7 @@
         <label class="field"><span>Diameter</span><input type="number" min="20" max="3000" step="1" data-bind="disc.diameter" class="num wide"><output id="dia-inch" class="muted"></output></label>
         <label class="check-line"><input type="checkbox" id="scale-with-disc" checked> Scale arms when diameter changes</label>
         <label class="field"><span>Hub Ø</span><input type="range" min="0" max="300" step="1" data-bind="disc.hubDiameter"><input type="number" min="0" step="0.5" data-bind="disc.hubDiameter" class="num"></label>
+        <label class="field" title="How many times each cutout shape repeats around the centre (independent of the arm count)"><span>Cutout repeats</span><input type="range" min="1" max="24" step="1" data-bind="disc.cutouts"><input type="number" min="1" max="72" step="1" data-bind="disc.cutouts" class="num"></label>
         <label class="field"><span>Axle hole Ø</span><input type="range" min="0" max="60" step="0.5" data-bind="disc.holeDiameter"><input type="number" min="0" step="0.1" data-bind="disc.holeDiameter" class="num"></label>
         <label class="field"><span>Outer rim</span><input type="range" min="0" max="40" step="0.5" data-bind="disc.rimWidth"><input type="number" min="0" step="0.5" data-bind="disc.rimWidth" class="num"></label>
         <label class="check-line"><input type="checkbox" data-bind="disc.clipToDisc"> Trim arms to disc diameter</label>
@@ -138,7 +139,7 @@
       </section>
 
       <section class="card">
-        <h2>Arm presets</h2>
+        <h2>Presets <span class="hint">arms &amp; hub cutouts</span></h2>
         <select id="preset-select"></select>
         <div class="row gap">
           <button data-action="preset-replace" class="grow">Replace arm</button>
@@ -150,6 +151,7 @@
         <h2>Drawing</h2>
         <label class="field"><span>Brush / pen width</span><input type="range" min="1" max="80" step="0.5" data-toolopt="brushWidth"><output data-out="tools.brushWidth" data-unit=" mm"></output></label>
         <label class="field"><span>Freehand smoothing</span><input type="range" min="0.5" max="12" step="0.5" data-toolopt="smoothing"><output data-out="tools.smoothing"></output></label>
+        <label class="check-line" title="New pen, brush and outline shapes are cut out of the disc instead of added"><input type="checkbox" data-toolopt="cutout"> Draw cutouts (subtract from disc)</label>
         <div class="checks">
           <label><input type="checkbox" data-view="grid"> Grid</label>
           <label><input type="checkbox" data-view="snap"> Snap</label>
